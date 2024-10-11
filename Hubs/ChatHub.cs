@@ -10,7 +10,7 @@ namespace SupaGPT.Hubs
     {
         private OpenAIClient _openAiClient;
 
-        private static String AI_NAME = "SupaGPT";
+        private static String AI_NAME = "Susu";
 
         public ChatHub()
         {
