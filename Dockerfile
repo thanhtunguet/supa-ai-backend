@@ -1,8 +1,7 @@
-FROM registry-dev.truesight.asia/truesight/aspnet:6.0.11-bullseye-slim AS base
+FROM mcr.microsoft.com/dotnet/runtime:6.0 AS base
 WORKDIR /app
-RUN apt-get update && apt-get install -y net-tools curl iputils-ping telnet nano vim libc6-dev libgdiplus
 
-FROM registry-dev.truesight.asia/truesight/dotnet-sdk:6.0.403-bullseye-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 COPY ["SupaGPT.csproj", "./"]
 RUN dotnet restore "SupaGPT.csproj"
@@ -14,11 +13,8 @@ FROM build AS publish
 RUN dotnet publish "SupaGPT.csproj" -c Release -o /app/publish
 
 FROM base AS final
-
 WORKDIR /app
-
 COPY --from=publish /app/publish .
-
 EXPOSE 8080
 
 CMD ["dotnet", "SupaGPT.dll", "--urls=http://0.0.0.0:8080"]
