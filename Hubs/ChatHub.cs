@@ -78,6 +78,11 @@ namespace SupaGPT.Hubs
                     var chunk = completionUpdate.ContentUpdate[0].Text;
                     await Clients.Caller.SendAsync("ReceiveMessage", AI_NAME, chunk);
                 }
+
+                if (completionUpdate.FinishReason != null)
+                {
+                    await Clients.Caller.SendAsync("CompleteTyping", AI_NAME, "");
+                }
             }
         }
     }
