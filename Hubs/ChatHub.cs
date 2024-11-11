@@ -9,34 +9,35 @@ namespace SupaGPT.Hubs
 {
     public class ChatHub : Hub
     {
-        private string? OPENAI_ENDPOINT;
-        private string OPENAI_API_KEY;
-        private string OPENAI_MODEL;
+        private const string ReceiveMessage = "ReceiveMessage";
+        private const string CompleteTyping = "CompleteTyping";
 
         private static string AI_NAME = "Susu";
 
-        private OpenAIClient _openAiClient;
-
-        public ChatHub()
+        public OpenAIClient CreateClient()
         {
-            OPENAI_ENDPOINT = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
-            OPENAI_API_KEY = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
-            OPENAI_MODEL = Environment.GetEnvironmentVariable("OPENAI_MODEL")!;
-            bool isNullOrEmpty = string.IsNullOrEmpty(OPENAI_ENDPOINT);
+            string? aiEndpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+            string aiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
+            string aiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL")!;
 
+            bool isNullOrEmpty = string.IsNullOrEmpty(aiEndpoint);
+
+            OpenAIClient client;
             if (isNullOrEmpty)
             {
-                _openAiClient = new OpenAIClient(OPENAI_API_KEY);
+                client = new OpenAIClient(aiKey);
             }
             else
             {
                 OpenAIClientOptions options = new OpenAIClientOptions()
                 {
-                    Endpoint = new Uri(OPENAI_ENDPOINT!),
+                    Endpoint = new Uri(aiEndpoint!),
                 };
-                ApiKeyCredential credential = new ApiKeyCredential(OPENAI_API_KEY);
-                _openAiClient = new OpenAIClient(credential, options);
+                ApiKeyCredential credential = new ApiKeyCredential(aiKey);
+                client = new OpenAIClient(credential, options);
             }
+
+            return client;
         }
 
 
@@ -45,18 +46,20 @@ namespace SupaGPT.Hubs
             await base.OnConnectedAsync();
         }
 
-        public async Task SendMessage(string user, List<ChatMessageDTO> messages)
+        public async Task SendMessage(string user, UserPrompt prompt)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, messages);
+            await Clients.All.SendAsync(ReceiveMessage, user, prompt.Messages);
             ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions()
             {
                 Temperature = 0f,
             };
             List<ChatMessage> chatMessages = new List<ChatMessage>();
 
-            for (int i = 0; i < messages.Count; i++)
+            chatMessages.Add(new SystemChatMessage(prompt.SystemPrompt));
+
+            for (int i = 0; i < prompt.Messages.Count; i++)
             {
-                ChatMessageDTO msg = messages[i];
+                ChatMessageDTO msg = prompt.Messages[i];
                 if (msg.user == AI_NAME)
                 {
                     chatMessages.Add(new AssistantChatMessage(msg.message));
@@ -67,8 +70,10 @@ namespace SupaGPT.Hubs
                 }
             }
 
+            OpenAIClient client = CreateClient();
+
             CollectionResult<StreamingChatCompletionUpdate> completionUpdates =
-                _openAiClient.GetChatClient(OPENAI_MODEL)
+                client.GetChatClient(prompt.Model)
                     .CompleteChatStreaming(chatMessages, chatCompletionOptions);
 
             foreach (StreamingChatCompletionUpdate completionUpdate in completionUpdates)
@@ -76,12 +81,12 @@ namespace SupaGPT.Hubs
                 if (completionUpdate.ContentUpdate.Count > 0)
                 {
                     var chunk = completionUpdate.ContentUpdate[0].Text;
-                    await Clients.Caller.SendAsync("ReceiveMessage", AI_NAME, chunk);
+                    await Clients.Caller.SendAsync(ReceiveMessage, AI_NAME, chunk);
                 }
 
                 if (completionUpdate.FinishReason != null)
                 {
-                    await Clients.Caller.SendAsync("CompleteTyping", AI_NAME, "");
+                    await Clients.Caller.SendAsync(CompleteTyping, AI_NAME, "");
                 }
             }
         }

@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
 
 builder.Services.AddSignalR();
 
@@ -19,16 +20,8 @@ if (app.Environment.IsDevelopment())
     DotEnv.Load();
 }
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger(options => { options.RouteTemplate = "/api/swagger/{documentName}/swagger.json"; });
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/api/swagger/v1/swagger.json", "SupaGPT API V1");
-        options.RoutePrefix = "/api/swagger";
-    });
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -36,6 +29,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.MapControllers();
 app.UseAuthorization();
 
 app.UseEndpoints(endpoints => { endpoints.MapHub<ChatHub>("/api/chat"); });
