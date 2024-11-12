@@ -14,9 +14,12 @@ namespace SupaGPT.Hubs
 
         private static string _aiName = "Susu";
 
-        private OpenAIClient CreateClient()
+        private OpenAIClient CreateClient(string? endpoint)
         {
-            string? aiEndpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
+            Console.WriteLine($"Endpoint = {endpoint}");
+            string? aiEndpoint = String.IsNullOrEmpty(endpoint)
+                ? Environment.GetEnvironmentVariable("OPENAI_ENDPOINT")
+                : endpoint;
             string aiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
             string aiModel = Environment.GetEnvironmentVariable("OPENAI_MODEL")!;
 
@@ -67,7 +70,7 @@ namespace SupaGPT.Hubs
                 }
             }
 
-            OpenAIClient client = CreateClient();
+            OpenAIClient client = CreateClient(prompt.Endpoint);
 
             CollectionResult<StreamingChatCompletionUpdate> completionUpdates =
                 client.GetChatClient(prompt.Model)

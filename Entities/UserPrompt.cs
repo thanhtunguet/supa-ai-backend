@@ -9,4 +9,6 @@ public class UserPrompt
     public List<ChatMessageDTO> Messages { get; set; }
 
     public string SystemPrompt { get; set; }
+    
+    public string Endpoint { get; set; }
 }
