@@ -12,9 +12,9 @@ namespace SupaGPT.Hubs
         private const string ReceiveMessage = "ReceiveMessage";
         private const string CompleteTyping = "CompleteTyping";
 
-        private static string AI_NAME = "Susu";
+        private static string _aiName = "Susu";
 
-        public OpenAIClient CreateClient()
+        private OpenAIClient CreateClient()
         {
             string? aiEndpoint = Environment.GetEnvironmentVariable("OPENAI_ENDPOINT");
             string aiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")!;
@@ -53,14 +53,11 @@ namespace SupaGPT.Hubs
             {
                 Temperature = 0f,
             };
-            List<ChatMessage> chatMessages = new List<ChatMessage>();
+            List<ChatMessage> chatMessages = new List<ChatMessage> { new SystemChatMessage(prompt.SystemPrompt) };
 
-            chatMessages.Add(new SystemChatMessage(prompt.SystemPrompt));
-
-            for (int i = 0; i < prompt.Messages.Count; i++)
+            foreach (var msg in prompt.Messages)
             {
-                ChatMessageDTO msg = prompt.Messages[i];
-                if (msg.user == AI_NAME)
+                if (msg.user == _aiName)
                 {
                     chatMessages.Add(new AssistantChatMessage(msg.message));
                 }
@@ -81,12 +78,12 @@ namespace SupaGPT.Hubs
                 if (completionUpdate.ContentUpdate.Count > 0)
                 {
                     var chunk = completionUpdate.ContentUpdate[0].Text;
-                    await Clients.Caller.SendAsync(ReceiveMessage, AI_NAME, chunk);
+                    await Clients.Caller.SendAsync(ReceiveMessage, _aiName, chunk);
                 }
 
                 if (completionUpdate.FinishReason != null)
                 {
-                    await Clients.Caller.SendAsync(CompleteTyping, AI_NAME, "");
+                    await Clients.Caller.SendAsync(CompleteTyping, _aiName, "");
                 }
             }
         }

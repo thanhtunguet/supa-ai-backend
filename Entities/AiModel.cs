@@ -12,10 +12,13 @@ public class AiModel
 
     public static AiModel Gpt4o = new AiModel() { Name = "gpt-4o", IsDefault = false };
 
+    public static AiModel Llama31 = new AiModel() { Name = "llama3.1", IsDefault = false };
+
     public static List<AiModel> SupportedModels = new List<AiModel>()
     {
         ArceeVylinh,
         Gpt4oMini,
         Gpt4o,
+        Llama31,
     };
 }
