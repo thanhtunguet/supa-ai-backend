@@ -11,4 +11,10 @@ public class ChatController : Controller
     {
         return await Task.FromResult(AiModel.SupportedModels);
     }
+
+    [HttpGet("/api/endpoints")]
+    public async Task<List<AiEndpoint>> GetEndpoints()
+    {
+        return await Task.FromResult(AiEndpoint.Values);
+    }
 }
